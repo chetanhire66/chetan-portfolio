@@ -6,6 +6,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import cookieParser from 'cookie-parser';
 import multer from 'multer';
+import cors from "cors";
 import { v2 as cloudinary } from 'cloudinary';
 import streamifier from 'streamifier';
 import { Portfolio } from './models/Portfolio.js';
@@ -20,6 +21,13 @@ const editableSections = new Set(['profile', 'education', 'skills', 'projects', 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 const githubCache = { expiresAt: 0, value: null, promise: null };
 const GITHUB_CACHE_MS = 5 * 60 * 1000;
+
+app.use(
+  cors({
+    origin: process.env.CLIENT_URL,
+    credentials: true,
+  })
+);
 
 app.use(express.json({ limit: '2mb' }));
 app.use(cookieParser());
