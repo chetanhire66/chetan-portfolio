@@ -43,28 +43,39 @@ type GithubData = {
 type ContributionWeek = Array<GithubContribution | null>;
 
 const getWeekday = (day: GithubContribution) => {
-  if (typeof day.weekday === 'number' && day.weekday >= 0 && day.weekday <= 6) {
+  if (
+    typeof day.weekday === 'number' &&
+    day.weekday >= 0 &&
+    day.weekday <= 6
+  ) {
     return day.weekday;
   }
 
   return new Date(`${day.date}T00:00:00Z`).getUTCDay();
 };
 
-// GitHub supplies a weekday for every contribution day. Grouping by the
-// Sunday that begins each week makes the grid resilient to partial weeks,
-// missing dates, or an API response that is not already ordered.
-const createContributionWeeks = (contributions: GithubContribution[]): ContributionWeek[] => {
+const createContributionWeeks = (
+  contributions: GithubContribution[]
+): ContributionWeek[] => {
   const weeks = new Map<string, ContributionWeek>();
 
   [...contributions]
     .sort((first, second) => first.date.localeCompare(second.date))
     .forEach((day) => {
       const weekday = getWeekday(day);
+
       const weekStart = new Date(`${day.date}T00:00:00Z`);
       weekStart.setUTCDate(weekStart.getUTCDate() - weekday);
+
       const weekKey = weekStart.toISOString().slice(0, 10);
 
-      if (!weeks.has(weekKey)) weeks.set(weekKey, Array.from({ length: 7 }, () => null));
+      if (!weeks.has(weekKey)) {
+        weeks.set(
+          weekKey,
+          Array.from({ length: 7 }, () => null)
+        );
+      }
+
       weeks.get(weekKey)![weekday] = day;
     });
 
@@ -82,42 +93,70 @@ export const GithubStatsSection: React.FC = () => {
 
   useEffect(() => {
     let active = true;
-    const githubUrl = new URL('/api/github', window.location.origin).toString();
+
+    // IMPORTANT:
+    // Local:
+    // VITE_API_BASE_URL=http://localhost:5000/api
+    //
+    // Production:
+    // VITE_API_BASE_URL=https://chetan-portfolio-iqvu.onrender.com/api
+
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+
+    if (!apiBaseUrl) {
+      setError('VITE_API_BASE_URL is not configured.');
+      setLoading(false);
+      return;
+    }
+
+    const githubUrl = `${apiBaseUrl.replace(/\/$/, '')}/github`;
 
     const fetchGithubData = async () => {
       try {
         setLoading(true);
         setError('');
 
-        console.log('[GitHub activity] Fetching:', githubUrl);
-        const response = await fetch(githubUrl);
-        console.log('[GitHub activity] Response:', response.status, response);
+        console.log('[GitHub activity] API URL:', githubUrl);
 
-        const contentType = response.headers.get('content-type') || '';
+        const response = await fetch(githubUrl);
+
+        console.log(
+          '[GitHub activity] Response status:',
+          response.status
+        );
+
+        const contentType =
+          response.headers.get('content-type') || '';
 
         if (!contentType.includes('application/json')) {
           throw new Error(
-            `Backend returned a non-JSON response (${response.status}). Check that the backend is running on /api.`
+            `Backend returned a non-JSON response (${response.status}).`
           );
         }
 
         const data = await response.json();
-        console.log('[GitHub activity] Parsed JSON:', data);
+
+        console.log(
+          '[GitHub activity] Response data:',
+          data
+        );
 
         if (!response.ok) {
           throw new Error(
-            data?.error || 'GitHub activity is unavailable.'
+            data?.error ||
+              'GitHub activity is unavailable.'
           );
         }
 
         if (active) {
-          console.log('[GitHub activity] Passing data to setGithubData:', data);
           setGithubData(data as GithubData);
-        } else {
-          console.log('[GitHub activity] Request completed after component unmounted.');
         }
       } catch (reason) {
-        console.error('[GitHub activity] Fetch failed:', reason);
+        console.error(
+          '[GitHub activity] Fetch failed:',
+          reason
+        );
+
         if (active) {
           setError(
             reason instanceof Error
@@ -140,9 +179,14 @@ export const GithubStatsSection: React.FC = () => {
   }, []);
 
   const stats = githubData?.stats;
+
   const languages = stats?.languages || [];
-  const contributionCells = githubData?.contributions || [];
-  const contributionWeeks = createContributionWeeks(contributionCells);
+
+  const contributionCells =
+    githubData?.contributions || [];
+
+  const contributionWeeks =
+    createContributionWeeks(contributionCells);
 
   const getCellColor = (level: string) => {
     switch (level) {
@@ -181,7 +225,9 @@ export const GithubStatsSection: React.FC = () => {
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full glass-card text-xs font-mono text-blue-400 border border-blue-500/20">
             <Github className="w-3.5 h-3.5" />
 
-            <span>07 // OPEN SOURCE METRICS</span>
+            <span>
+              07 // OPEN SOURCE METRICS
+            </span>
           </div>
 
           <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-slate-100 light:text-slate-900">
@@ -317,37 +363,54 @@ export const GithubStatsSection: React.FC = () => {
 
             {/* Contribution Grid */}
             <div className="overflow-x-auto py-4">
+
               <div
                 role="grid"
                 aria-label="GitHub contribution activity"
                 className="flex w-max gap-1.5"
               >
-                {contributionWeeks.map((week, weekIndex) => (
-                  <div key={`week-${weekIndex}`} role="rowgroup" className="grid grid-rows-7 gap-1.5">
-                    {week.map((day, weekday) => day ? (
-                      <div
-                        key={day.date}
-                        role="gridcell"
-                        title={`${day.count} contributions on ${day.date}`}
-                        aria-label={`${day.count} contributions on ${day.date}`}
-                        className={`
-                          h-4 w-4
-                          rounded-sm
-                          border
-                          transition-all
-                          duration-200
-                          hover:scale-125
-                          hover:z-10
-                          ${getCellColor(day.level)}
-                        `}
-                      />
-                    ) : (
-                      <div key={`empty-${weekIndex}-${weekday}`} aria-hidden="true" className="h-4 w-4" />
-                    ))}
-                  </div>
-                ))}
-              </div>
 
+                {contributionWeeks.map(
+                  (week, weekIndex) => (
+                    <div
+                      key={`week-${weekIndex}`}
+                      role="rowgroup"
+                      className="grid grid-rows-7 gap-1.5"
+                    >
+
+                      {week.map(
+                        (day, weekday) =>
+                          day ? (
+                            <div
+                              key={day.date}
+                              role="gridcell"
+                              title={`${day.count} contributions on ${day.date}`}
+                              aria-label={`${day.count} contributions on ${day.date}`}
+                              className={`
+                                h-4 w-4
+                                rounded-sm
+                                border
+                                transition-all
+                                duration-200
+                                hover:scale-125
+                                hover:z-10
+                                ${getCellColor(day.level)}
+                              `}
+                            />
+                          ) : (
+                            <div
+                              key={`empty-${weekIndex}-${weekday}`}
+                              aria-hidden="true"
+                              className="h-4 w-4"
+                            />
+                          )
+                      )}
+
+                    </div>
+                  )
+                )}
+
+              </div>
             </div>
 
             {!loading &&
@@ -376,7 +439,6 @@ export const GithubStatsSection: React.FC = () => {
                 <span className="w-3 h-3 rounded-sm bg-teal-400" />
 
                 <span>More</span>
-
               </div>
 
               <a
@@ -444,7 +506,9 @@ export const GithubStatsSection: React.FC = () => {
 
                     <span
                       className="w-3 h-3 rounded-full flex-shrink-0"
-                      style={{ backgroundColor: lang.color }}
+                      style={{
+                        backgroundColor: lang.color,
+                      }}
                     />
 
                     <span className="font-bold text-slate-200 light:text-slate-800">
