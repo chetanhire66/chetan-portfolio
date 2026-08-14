@@ -64,11 +64,18 @@ export const AiChatModal: React.FC<AiChatModalProps> = ({ isOpen, onClose }) => 
     setLoading(true);
 
     try {
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: textToSend })
-      });
+      const API_BASE_URL =
+        import.meta.env.VITE_API_BASE_URL ||
+        'http://localhost:5000/api';
+    
+      const res = await fetch(
+        `${API_BASE_URL.replace(/\/$/, '')}/chat`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: textToSend })
+        }
+      );
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || 'Unable to reach the portfolio assistant.');
       

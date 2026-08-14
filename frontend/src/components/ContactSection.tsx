@@ -30,12 +30,21 @@ export const ContactSection: React.FC = () => {
     }
 
     setStatus('submitting');
+    setStatus('submitting');
+
     try {
-      const res = await fetch('/api/contact', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
+      const API_BASE_URL =
+        import.meta.env.VITE_API_BASE_URL ||
+        'http://localhost:5000/api';
+
+      const res = await fetch(
+        `${API_BASE_URL.replace(/\/$/, '')}/contact`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData)
+        }
+      );
       const data = await res.json();
       if (res.ok && data.success) {
         setStatus('success');
@@ -58,7 +67,7 @@ export const ContactSection: React.FC = () => {
       <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[140px] pointer-events-none -z-10" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
+
         {/* Section Header */}
         <div className="text-center space-y-4 mb-16">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full glass-card text-xs font-mono text-blue-400 border border-blue-500/20">
@@ -74,7 +83,7 @@ export const ContactSection: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
-          
+
           {/* Left Column: Contact Cards & Copy Email Bar */}
           <motion.div
             initial={{ opacity: 0, x: -30 }}
@@ -106,11 +115,10 @@ export const ContactSection: React.FC = () => {
                 <button
                   onClick={handleCopyEmail}
                   title="Copy Email"
-                  className={`px-3 py-2 rounded-xl text-xs font-mono font-bold transition-all flex items-center gap-1.5 flex-shrink-0 ${
-                    copied
+                  className={`px-3 py-2 rounded-xl text-xs font-mono font-bold transition-all flex items-center gap-1.5 flex-shrink-0 ${copied
                       ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
                       : 'glass-card hover:bg-slate-800 text-slate-300 light:text-slate-700 border border-slate-700'
-                  }`}
+                    }`}
                 >
                   {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                   <span>{copied ? 'Copied!' : 'Copy'}</span>
@@ -131,7 +139,7 @@ export const ContactSection: React.FC = () => {
               {/* Social Connects Row */}
               <div className="pt-4 border-t border-slate-800 light:border-slate-200 space-y-3">
                 <p className="text-xs font-mono text-slate-400 uppercase font-bold">Verified Social Profiles</p>
-                
+
                 <div className="grid grid-cols-2 gap-3">
                   <a
                     href={PERSONAL_INFO.github}
@@ -188,11 +196,10 @@ export const ContactSection: React.FC = () => {
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className={`p-4 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2.5 ${
-                    status === 'success'
+                  className={`p-4 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2.5 ${status === 'success'
                       ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
                       : 'bg-red-500/15 text-red-300 border border-red-500/30'
-                  }`}
+                    }`}
                 >
                   <span>{statusMsg}</span>
                 </motion.div>

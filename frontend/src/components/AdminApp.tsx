@@ -6,10 +6,39 @@ type Content = Record<string, any>;
 type Page = 'dashboard' | 'profile' | 'about' | 'education' | 'skills' | 'projects' | 'experience' | 'certifications' | 'achievements' | 'resume' | 'social' | 'githubSettings' | 'messages' | 'settings';
 const navigation: [Page, string][] = [['dashboard', 'Dashboard'], ['profile', 'Profile / Hero'], ['about', 'About'], ['education', 'Education'], ['skills', 'Skills'], ['projects', 'Projects'], ['experience', 'Experience / Internships'], ['certifications', 'Certificates'], ['achievements', 'Achievements'], ['resume', 'Resume'], ['social', 'Social Links & Contact'], ['githubSettings', 'GitHub Settings'], ['messages', 'Messages'], ['settings', 'Settings']];
 
-async function request(path: string, options: RequestInit = {}) {
-  const response = await fetch(path, { credentials: 'same-origin', headers: { ...(options.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }), ...options.headers }, ...options });
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ||
+  'http://localhost:5000/api';
+
+async function request(
+  path: string,
+  options: RequestInit = {}
+) {
+  const apiUrl = `${API_BASE_URL.replace(/\/$/, '')}${path}`;
+
+  const response = await fetch(apiUrl, {
+    credentials: 'include',
+
+    headers: {
+      ...(options.body instanceof FormData
+        ? {}
+        : {
+            'Content-Type': 'application/json',
+          }),
+      ...options.headers,
+    },
+
+    ...options,
+  });
+
   const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(data.error || 'Request failed.');
+
+  if (!response.ok) {
+    throw new Error(
+      data.error || 'Request failed.'
+    );
+  }
+
   return data;
 }
 
