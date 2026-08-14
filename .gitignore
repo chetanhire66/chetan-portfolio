@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+
+# Build
+dist/
+build/
+coverage/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# macOS
+.DS_Store
+
+# Logs
+*.log
+
+# IDE
+.vscode/
+.idea/
