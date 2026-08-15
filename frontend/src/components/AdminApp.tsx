@@ -14,7 +14,12 @@ async function request(
   path: string,
   options: RequestInit = {}
 ) {
-  const apiUrl = `${API_BASE_URL.replace(/\/$/, '')}${path}`;
+  const cleanPath = path.startsWith('/api/')
+  ? path.substring(4)
+  : path;
+
+const apiUrl =
+  `${API_BASE_URL.replace(/\/$/, '')}/${cleanPath.replace(/^\/+/, '')}`;
 
   const response = await fetch(apiUrl, {
     credentials: 'include',
