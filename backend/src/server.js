@@ -253,12 +253,12 @@ app.post('/api/admin/login', async (req, res) => {
   const passwordMatches = await bcrypt.compare(password || '', process.env.ADMIN_PASSWORD);
   if (!usernameMatches || !passwordMatches) return res.status(401).json({ error: 'Invalid username or password.' });
   const token = jwt.sign({ role: 'admin', username }, process.env.JWT_SECRET, { expiresIn: '8h' });
-  res.cookie('portfolio_admin', token, { httpOnly: true, secure: isProduction, sameSite: 'lax', maxAge: 8 * 60 * 60 * 1000, path: '/' });
+  res.cookie('portfolio_admin', token, { httpOnly: true, secure: isProduction, sameSite: 'none', maxAge: 8 * 60 * 60 * 1000, path: '/' });
   res.json({ success: true, username });
 });
 
 app.post('/api/admin/logout', (_req, res) => {
-  res.clearCookie('portfolio_admin', { httpOnly: true, secure: isProduction, sameSite: 'lax', path: '/' });
+  res.clearCookie('portfolio_admin', { httpOnly: true, secure: isProduction, sameSite: 'none', path: '/' });
   res.json({ success: true });
 });
 
